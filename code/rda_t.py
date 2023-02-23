@@ -19,6 +19,11 @@ def num_rx_antennas_from_config(config):
             c += 1
     return c
 
+def get_max_intensity_row(arr):
+    max_row_idx = np.argmax(arr.sum(axis=1))
+    max_row = arr[max_row_idx, :]
+    return max_row
+
 class RealTimePlotter:
     def __init__(self, num_plots, plot_names, plot_scales):
         # 1. 需要把数据整理成对应的热力图格式
@@ -137,7 +142,7 @@ if __name__ == '__main__':
         plot_names = ['range', 'doppler', 'angle']
 
         # 20个frame凑成1张图,3s 生成一张图
-        plot_scales = [(0,3,0, 2), (0,3,-5, 5), (0,3,-40, 40)]
+        plot_scales = [(0,max_range_m,0, max_range_m), (-metrics.max_speed_m_s,metrics.max_speed_m_s ,-metrics.max_speed_m_s,metrics.max_speed_m_s), (-40, 40,-40,40)]
     
         # Create an instance of the RealTimePlotter class
         num_plots = len(plot_names)
@@ -146,7 +151,7 @@ if __name__ == '__main__':
         # Continuously update the plots
         tot=0
         # data是一个三维数组，['range','doppler','angle']
-        data = []
+        data = [[],[],[]]
         while True:
             tot+=1
             # frame has dimension num_rx_antennas x num_samples_per_chirp x num_chirps_per_frame
@@ -175,24 +180,24 @@ if __name__ == '__main__':
                 doppler_i = rd_beam_formed[:,:,i_beam]
                 beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
 
+            # doppler: row correspond to the maximum pixel intensity from the range-doppler map
+            cur_doppler=get_max_intensity_row(dfft_dbfs)
+
+            # range: columns correspond to the maximum pixel intensity from the doppler-range map
+            cur_range=get_max_intensity_row(dfft_dbfs.T)
+
             # Maximum energy in Range-Angle map
-            max_energy = np.max(beam_range_energy)
+            # angle
+            cur_angle=get_max_intensity_row(beam_range_energy)
+            # max_columns_range_angle=get_max_intensity_row(beam_range_energy.T)
 
-            # Rescale map to better capture the peak The rescaling is done in a
-            # way such that the maximum always has the same value, independent
-            # on the original input peak. A proper peak search can greatly
-            # improve this algorithm.
-            scale = 150
-            beam_range_energy = scale*(beam_range_energy/max_energy - 1)
-
-            # Find dominant angle of target
-            _, idx = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
-            angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[idx]
+            data[0].append(cur_range)
+            data[1].append(cur_doppler)
+            data[2].append(cur_angle)
 
             if tot%20==0:
+                for item in range(data):
+                    data[item]=np.array(data[item])
                 # update ploting data
-                # update angle
-                # update distance
-                # update doppler
                 plotter.update_plots(data)
-                data=[]
+                data=[[],[],[]]
