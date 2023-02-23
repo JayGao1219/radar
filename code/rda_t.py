@@ -9,11 +9,9 @@ from ifxAvian import Avian
 from internal.fft_spectrum import *
 from DBF import DBF
 from doppler import DopplerAlgo,linear_to_dB
-from static_distance import DistanceAlgo
 
 def num_rx_antennas_from_config(config):
     rx_mask = config.rx_mask
-
     # popcount for rx_mask
     c = 0
     for i in range(32):
@@ -137,7 +135,9 @@ if __name__ == '__main__':
 
         # Define the names and scales of the data to be plotted
         plot_names = ['range', 'doppler', 'angle']
-        plot_scales = [(0, 2), (-5, 5), (-40, 40)]
+
+        # 20个frame凑成1张图,3s 生成一张图
+        plot_scales = [(0,3,0, 2), (0,3,-5, 5), (0,3,-40, 40)]
     
         # Create an instance of the RealTimePlotter class
         num_plots = len(plot_names)
@@ -145,19 +145,16 @@ if __name__ == '__main__':
 
         # Continuously update the plots
         tot=0
+        # data是一个三维数组，['range','doppler','angle']
+        data = []
         while True:
             tot+=1
-            data = {}
-            data['time'] = tot
-
             # frame has dimension num_rx_antennas x num_samples_per_chirp x num_chirps_per_frame
             frame = device.get_next_frame()
 
             rd_spectrum = np.zeros((config.num_samples_per_chirp, 2*config.num_chirps_per_frame, num_rx_antennas), dtype=complex)
 
             beam_range_energy = np.zeros((config.num_samples_per_chirp, num_beams))
-
-            cur_distance=0.0001
 
             for i_ant in range(num_rx_antennas): # For each antenna
                 # Current RX antenna (num_samples_per_chirp x num_chirps_per_frame)
@@ -166,14 +163,11 @@ if __name__ == '__main__':
                 # Compute Doppler spectrum
                 dfft_dbfs = doppler.compute_doppler_map(mat, i_ant)
                 rd_spectrum[:,:,i_ant] = dfft_dbfs
-                cur_distance += distanceExample.compute_distance(mat)
 
             dfft_dbfs=linear_to_dB(dfft_dbfs)
             # Find dominat doppler of target
             _, idx = np.unravel_index(dfft_dbfs.argmax(),dfft_dbfs.shape)
-            velocity = idx*constants.c*constants.c/4/128/(abs(config.end_frequency_Hz-config.start_frequency_Hz))/cur_distance
 
-            cur_distance/=num_rx_antennas
 
             # Compute Range-Angle map
             rd_beam_formed = dbf.run(rd_spectrum)
@@ -195,12 +189,10 @@ if __name__ == '__main__':
             _, idx = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
             angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[idx]
 
-            # update ploting data
-            # update angle
-            data[plot_names[-1]]=angle_degrees
-            # update distance
-            data[plot_names[0]]=cur_distance
-            # update doppler
-            data[plot_names[1]]=velocity
-
-            plotter.update_plots(data)
+            if tot%20==0:
+                # update ploting data
+                # update angle
+                # update distance
+                # update doppler
+                plotter.update_plots(data)
+                data=[]
