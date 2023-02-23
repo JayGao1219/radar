@@ -56,19 +56,18 @@ class RealTimePlotter:
                 extent=(self.plot_scales[i][0],
                     self.plot_scales[i][1],
                     self.plot_scales[i][2],
-                    self.plot_scales[i][3]),
-                origin='lower')
+                    self.plot_scales[i][3]))
             self._h.append(h)
             self.axs[i].set_title=self.plot_names[i]
             self.axs[i].set_xlabel('Time')
             self.axs[i].set_ylabel(self.plot_names[i])
 
         # 设置热力图颜色
-        self.fig.subplots_adjust(right=0.8)
-        cbar_ax = self.fig.add_axes([0.85, 0.0, 0.03, 1])
+        # self.fig.subplots_adjust(right=0.8)
+        # cbar_ax = self.fig.add_axes([0.85, 0.0, 0.03, 1])
 
-        cbar =self.fig.colorbar(self._h[0], cax=cbar_ax)
-        cbar.ax.set_ylabel("magnitude (dB)")
+        # cbar =self.fig.colorbar(self._h[0], cax=cbar_ax)
+        # cbar.ax.set_ylabel("magnitude (dB)")
         # plt.tight_layout()
 
     def _draw_next_time(self, data_all_antennas):
@@ -142,7 +141,7 @@ if __name__ == '__main__':
         plot_names = ['range', 'doppler', 'angle']
 
         # 20个frame凑成1张图,3s 生成一张图
-        plot_scales = [(0,max_range_m,0, max_range_m), (-metrics.max_speed_m_s,metrics.max_speed_m_s ,-metrics.max_speed_m_s,metrics.max_speed_m_s), (-40, 40,-40,40)]
+        plot_scales = [(0,20,0,20), (0,20,0,20), (0,20,0,20)]
     
         # Create an instance of the RealTimePlotter class
         num_plots = len(plot_names)
@@ -180,6 +179,16 @@ if __name__ == '__main__':
                 doppler_i = rd_beam_formed[:,:,i_beam]
                 beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
 
+            # Maximum energy in Range-Angle map
+            max_energy = np.max(beam_range_energy)
+
+            # Rescale map to better capture the peak The rescaling is done in a
+            # way such that the maximum always has the same value, independent
+            # on the original input peak. A proper peak search can greatly
+            # improve this algorithm.
+            scale = 150
+            beam_range_energy = scale*(beam_range_energy/max_energy - 1)
+
             # doppler: row correspond to the maximum pixel intensity from the range-doppler map
             cur_doppler=get_max_intensity_row(dfft_dbfs)
 
@@ -189,15 +198,17 @@ if __name__ == '__main__':
             # Maximum energy in Range-Angle map
             # angle
             cur_angle=get_max_intensity_row(beam_range_energy)
-            # max_columns_range_angle=get_max_intensity_row(beam_range_energy.T)
+            max_columns_range_angle=get_max_intensity_row(beam_range_energy.T)
 
             data[0].append(cur_range)
             data[1].append(cur_doppler)
             data[2].append(cur_angle)
 
             if tot%20==0:
-                for item in range(data):
+                for item in range(3):
                     data[item]=np.array(data[item])
+                    data[item]=data[item].T
+                    print(data[item].shape)
                 # update ploting data
-                plotter.update_plots(data)
+                plotter.draw(data)
                 data=[[],[],[]]
