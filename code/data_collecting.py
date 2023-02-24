@@ -107,8 +107,7 @@ class RealTimePlotter:
     def is_open(self):
         return self._is_window_open
 
-
-def data_collect_in_real_time(root,gesture):
+def data_collect_in_real_time(root,gesture,number):
     # filepath是一个路径，以/结尾
     filepath='%s%s/'%(root,gesture)
     if not os.path.exists(filepath):
@@ -226,7 +225,18 @@ def data_collect_in_real_time(root,gesture):
                     print(data[item].shape)
                 # update ploting data
                 plotter.draw(data)
+                number-=1
+                if number==0:
+                    print("手势录入完毕")
+                    break
                 data=[[],[],[]]
                 print("请准备做下一个手势:%s"%(gesture))
                 time.sleep(1)
                 print("开始")
+
+if __name__=='__main__':
+    gesture=input("请输入想要录入的手势:")
+    number=input("请输入录入手势的数目：")
+    number=int(number)
+    root='../image/'
+    data_collect_in_real_time(root,gesture,number)
