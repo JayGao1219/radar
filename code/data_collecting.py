@@ -4,6 +4,7 @@ import random
 import time
 import pprint
 from scipy import constants
+import os
 
 from ifxAvian import Avian
 from internal.fft_spectrum import *
@@ -25,18 +26,20 @@ def get_max_intensity_row(arr):
     return max_row
 
 class RealTimePlotter:
-    def __init__(self, num_plots, plot_names, plot_scales):
+    def __init__(self, num_plots, plot_names, plot_scales,filepath,image_index):
         # 1. 需要把数据整理成对应的热力图格式
         # 2. 需要把数据的范围找到（range，Doppler，angle）
         self.num_plots = num_plots
         self.plot_names = plot_names
         self.plot_scales = plot_scales
-        self.fig, self.axs = plt.subplots(num_plots, 1, figsize=(10, 8))
+        self.fig, self.axs = plt.subplots(num_plots, 1, figsize=(10, 15))
         self._h = []
         self.fig.canvas.manager.set_window_title("Real Time Plotter")
         self.plot_scales = plot_scales
         self.plot_names = plot_names
         self._is_window_open=True
+        self.filepath=filepath
+        self.image_index=image_index
         
     def _draw_first_time(self, data_all_antennas):
         # First time draw
@@ -77,6 +80,7 @@ class RealTimePlotter:
             self._h[i].set_data(data)
 
     def draw(self, data_all_antennas):
+        self.image_index+=1
         # Draw data for all antenna
         if self._is_window_open:
             first_run = len(self._h) == 0
@@ -87,6 +91,10 @@ class RealTimePlotter:
 
             plt.draw()
             plt.pause(1e-3)
+
+            plt.savefig("%s%d.png"%(self.filepath,self.image_index))
+            print("数据储存完毕")
+            
 
     def close(self, event = None):
         if self.is_open():
@@ -99,7 +107,16 @@ class RealTimePlotter:
     def is_open(self):
         return self._is_window_open
 
-if __name__ == '__main__':
+
+def data_collect_in_real_time(root,gesture):
+    # filepath是一个路径，以/结尾
+    filepath='%s%s/'%(root,gesture)
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+        begin=0
+    else:
+        begin=len(os.listdir(filepath))
+
     num_beams = 27         # number of beams
     max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
 
@@ -126,9 +143,6 @@ if __name__ == '__main__':
         metrics = device.metrics_from_config(config)
         pprint.pprint(metrics)
 
-        # get maximum range
-        max_range_m = metrics.max_range_m
-
         # Create frame handle
         num_rx_antennas = num_rx_antennas_from_config(config)
 
@@ -145,12 +159,13 @@ if __name__ == '__main__':
     
         # Create an instance of the RealTimePlotter class
         num_plots = len(plot_names)
-        plotter = RealTimePlotter(num_plots, plot_names, plot_scales)
+        plotter = RealTimePlotter(num_plots, plot_names, plot_scales, filepath, begin)
 
         # Continuously update the plots
         tot=0
         # data是一个三维数组，['range','doppler','angle']
         data = [[],[],[]]
+        print("开始收集数据,请做出第一个手势:%s"%(gesture))
         while True:
             tot+=1
             # frame has dimension num_rx_antennas x num_samples_per_chirp x num_chirps_per_frame
@@ -212,3 +227,6 @@ if __name__ == '__main__':
                 # update ploting data
                 plotter.draw(data)
                 data=[[],[],[]]
+                print("请准备做下一个手势:%s"%(gesture))
+                time.sleep(1)
+                print("开始")
