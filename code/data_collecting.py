@@ -222,7 +222,7 @@ def data_collect_in_real_time(root,gesture,number):
                 for item in range(3):
                     data[item]=np.array(data[item])
                     data[item]=data[item].T
-                    print(data[item].shape)
+                    # print(data[item].shape)
                 # update ploting data
                 plotter.draw(data)
                 number-=1
