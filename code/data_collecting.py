@@ -64,6 +64,7 @@ class RealTimePlotter:
             self.axs[i].set_title=self.plot_names[i]
             self.axs[i].set_xlabel('Time')
             self.axs[i].set_ylabel(self.plot_names[i])
+            self.axs[i].set_aspect('auto')
 
         # 设置热力图颜色
         # self.fig.subplots_adjust(right=0.8)
@@ -125,11 +126,11 @@ def data_collect_in_real_time(root,gesture,number):
         tx_mask = 1,                      # activate TX1
         if_gain_dB = 33,                  # gain of 33dB
         tx_power_level = 31,              # TX power level of 31
-        start_frequency_Hz = 58e9,        # 60GHz 
-        end_frequency_Hz = 63e9,        # 61.5GHz
-        num_chirps_per_frame = 64,       # 128 chirps per frame
-        num_samples_per_chirp = 256,       # 64 samples per chirp
-        chirp_repetition_time_s = 0.0005, # 0.5ms
+        start_frequency_Hz = 58e9,        # bandwith 5GHz
+        end_frequency_Hz = 63e9, 
+        num_chirps_per_frame = 64,       # 64 chirps per frame
+        num_samples_per_chirp = 256,       # 256 samples per chirp
+        chirp_repetition_time_s = 0.005, # 0.5ms
         frame_repetition_time_s = 0.15,   # 0.15s, frame_Rate = 6.667Hz
         mimo_mode = 'off'                 # MIMO disabled
     )
@@ -154,7 +155,7 @@ def data_collect_in_real_time(root,gesture,number):
         plot_names = ['range', 'doppler', 'angle']
 
         # 20个frame凑成1张图,3s 生成一张图
-        plot_scales = [(0,20,0,20), (0,20,0,20), (0,20,0,20)]
+        plot_scales = [(0,20,0,3.8), (0,20,-2.4,2.4), (0,20,-max_angle_degrees,max_angle_degrees)]
     
         # Create an instance of the RealTimePlotter class
         num_plots = len(plot_names)
@@ -164,7 +165,7 @@ def data_collect_in_real_time(root,gesture,number):
         tot=0
         # data是一个三维数组，['range','doppler','angle']
         data = [[],[],[]]
-        print("开始收集数据,请做出第一个手势:%s"%(gesture))
+        print("开始收集数据")
         while True:
             tot+=1
             # frame has dimension num_rx_antennas x num_samples_per_chirp x num_chirps_per_frame
@@ -208,6 +209,8 @@ def data_collect_in_real_time(root,gesture,number):
 
             # range: columns correspond to the maximum pixel intensity from the doppler-range map
             cur_range=get_max_intensity_row(dfft_dbfs.T)
+            # reverse cur_range
+            cur_range=cur_range[::-1]
 
             # Maximum energy in Range-Angle map
             # angle
@@ -218,13 +221,15 @@ def data_collect_in_real_time(root,gesture,number):
             data[1].append(cur_doppler)
             data[2].append(cur_angle)
 
-            if tot%20==0:
+            if tot>=20:
                 for item in range(3):
+                    data[item]=data[item][-20:]
                     data[item]=np.array(data[item])
                     data[item]=data[item].T
                     # print(data[item].shape)
                 # update ploting data
                 plotter.draw(data)
+                '''
                 number-=1
                 if number==0:
                     print("手势录入完毕")
@@ -233,6 +238,7 @@ def data_collect_in_real_time(root,gesture,number):
                 print("请准备做下一个手势:%s"%(gesture))
                 time.sleep(1)
                 print("开始")
+                '''
 
 if __name__=='__main__':
     gesture=input("请输入想要录入的手势:")
@@ -240,3 +246,4 @@ if __name__=='__main__':
     number=int(number)
     root='../image/'
     data_collect_in_real_time(root,gesture,number)
+
