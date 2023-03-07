@@ -66,14 +66,6 @@ class RealTimePlotter:
             self.axs[i].set_ylabel(self.plot_names[i])
             self.axs[i].set_aspect('auto')
 
-        # 设置热力图颜色
-        # self.fig.subplots_adjust(right=0.8)
-        # cbar_ax = self.fig.add_axes([0.85, 0.0, 0.03, 1])
-
-        # cbar =self.fig.colorbar(self._h[0], cax=cbar_ax)
-        # cbar.ax.set_ylabel("magnitude (dB)")
-        # plt.tight_layout()
-
     def _draw_next_time(self, data_all_antennas):
         # Update data for each antenna
         for i in range(self.num_plots):
@@ -94,7 +86,6 @@ class RealTimePlotter:
             plt.pause(1e-3)
 
             plt.savefig("%s%d.png"%(self.filepath,self.image_index))
-            print("数据储存完毕")
             
 
     def close(self, event = None):
@@ -120,17 +111,18 @@ def data_collect_in_real_time(root,gesture,number):
     num_beams = 27         # number of beams
     max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
 
+
     config = Avian.DeviceConfig(
         sample_rate_Hz = 1_000_000,       # 1MHZ
         rx_mask = 5,                      # activate RX1 and RX3
         tx_mask = 1,                      # activate TX1
         if_gain_dB = 33,                  # gain of 33dB
         tx_power_level = 31,              # TX power level of 31
-        start_frequency_Hz = 58e9,        # bandwith 5GHz
-        end_frequency_Hz = 63e9, 
-        num_chirps_per_frame = 64,       # 64 chirps per frame
-        num_samples_per_chirp = 256,       # 256 samples per chirp
-        chirp_repetition_time_s = 0.005, # 0.5ms
+        start_frequency_Hz = 58e9,        # 60GHz 
+        end_frequency_Hz = 63e9,        # 61.5GHz
+        num_chirps_per_frame = 64,       # 128 chirps per frame
+        num_samples_per_chirp = 256,       # 64 samples per chirp
+        chirp_repetition_time_s = 0.0005, # 0.5ms
         frame_repetition_time_s = 0.15,   # 0.15s, frame_Rate = 6.667Hz
         mimo_mode = 'off'                 # MIMO disabled
     )
@@ -222,23 +214,14 @@ def data_collect_in_real_time(root,gesture,number):
             data[2].append(cur_angle)
 
             if tot>=20:
+                cur_data=[[],[],[]]
                 for item in range(3):
-                    data[item]=data[item][-20:]
-                    data[item]=np.array(data[item])
-                    data[item]=data[item].T
+                    cur_data[item]=data[item][-20:]
+                    cur_data[item]=np.array(cur_data[item])
+                    cur_data[item]=cur_data[item].T
                     # print(data[item].shape)
                 # update ploting data
-                plotter.draw(data)
-                '''
-                number-=1
-                if number==0:
-                    print("手势录入完毕")
-                    break
-                data=[[],[],[]]
-                print("请准备做下一个手势:%s"%(gesture))
-                time.sleep(1)
-                print("开始")
-                '''
+                plotter.draw(cur_data)
 
 if __name__=='__main__':
     gesture=input("请输入想要录入的手势:")
