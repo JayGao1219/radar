@@ -111,32 +111,52 @@ def data_collect_in_real_time(root,gesture,number):
     num_beams = 27         # number of beams
     max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
 
+    # config = Avian.DeviceConfig(
+    #     sample_rate_Hz = 1_000_000,       # 1MHZ
+    #     rx_mask = 7,                      # activate RX1 RX2 RX3
+    #     tx_mask = 1,                      # activate TX1
+    #     if_gain_dB = 33,                  # gain of 33dB
+    #     tx_power_level = 31,              # TX power level of 31
+    #     start_frequency_Hz = 58e9,        # bandwith 5GHz 
+    #     end_frequency_Hz = 63e9,        # 61.5GHz
+    #     num_chirps_per_frame = 32,       # 128 chirps per frame
+    #     num_samples_per_chirp = 64,       # 64 samples per chirp
+    #     chirp_repetition_time_s = 0.0005, # 0.5ms
+    #     frame_repetition_time_s = 0.15,   # 0.15s, frame_Rate = 6.667Hz
+    #     mimo_mode = 'off'                 # MIMO disabled
+    # )
 
-    config = Avian.DeviceConfig(
-        sample_rate_Hz = 1_000_000,       # 1MHZ
-        rx_mask = 5,                      # activate RX1 and RX3
-        tx_mask = 1,                      # activate TX1
-        if_gain_dB = 33,                  # gain of 33dB
-        tx_power_level = 31,              # TX power level of 31
-        start_frequency_Hz = 58e9,        # 60GHz 
-        end_frequency_Hz = 63e9,        # 61.5GHz
-        num_chirps_per_frame = 64,       # 128 chirps per frame
-        num_samples_per_chirp = 256,       # 64 samples per chirp
-        chirp_repetition_time_s = 0.0005, # 0.5ms
-        frame_repetition_time_s = 0.15,   # 0.15s, frame_Rate = 6.667Hz
-        mimo_mode = 'off'                 # MIMO disabled
+    metrics = Avian.DeviceMetrics(
+        sample_rate_Hz =           1_000_000,
+        range_resolution_m =       0.1,
+        max_range_m =              1.5,
+        max_speed_m_s =            1.9,
+        speed_resolution_m_s =     0.2,
+        frame_repetition_time_s =  0.15,
+        center_frequency_Hz =      60_500_000_000,
+        rx_mask =                  7,
+        tx_mask =                  1,
+        tx_power_level =           31,
+        if_gain_dB =               33
     )
 
+    config = device.metrics_to_config(metrics)
     with Avian.Device() as device:
         # set configuration
         device.set_config(config)
 
         # get metrics and print them
-        metrics = device.metrics_from_config(config)
+        # metrics = device.metrics_from_config(config)
         pprint.pprint(metrics)
 
         # Create frame handle
-        num_rx_antennas = num_rx_antennas_from_config(config)
+        num_rx_antennas = 2
+        
+        # get maximum range
+        max_range_m = metrics.max_range_m
+
+        #get maximum speed
+        max_speed_m_s = metrics.max_speed_m_s
 
         # Create objects for Range-Doppler, DBF, and plotting.
         # distanceExample = DistanceAlgo(config)
@@ -147,7 +167,7 @@ def data_collect_in_real_time(root,gesture,number):
         plot_names = ['range', 'doppler', 'angle']
 
         # 20个frame凑成1张图,3s 生成一张图
-        plot_scales = [(0,20,0,3.8), (0,20,-2.4,2.4), (0,20,-max_angle_degrees,max_angle_degrees)]
+        plot_scales = [(0,20,0,max_range_m), (0,20,-max_speed_m_s,max_speed_m_s), (0,20,-max_angle_degrees,max_angle_degrees)]
     
         # Create an instance of the RealTimePlotter class
         num_plots = len(plot_names)
