@@ -33,6 +33,9 @@ def get_trace_in_real_time():
         # set configuration
         device.set_config(config)
 
+        # get maximum range
+        max_range_m = metrics.max_range_m
+
         num_rx_antennas=2
 
         # Create objects to perform range-Doppler and DBF 
@@ -102,7 +105,21 @@ def get_trace_in_real_time():
             azimuth_angle = np.linspace(-trace_config.max_Azimuth_degress, trace_config.max_Azimuth_degress, trace_config.num_azimuth_beam)[azimuth_idx]
             elevation_angle = np.linspace(-trace_config.max_Elevation_degress, trace_config.max_Elevation_degress, trace_config.num_elevation_beam)[elevation_idx]
 
-            print("azimuth_angle: ", azimuth_angle, "elevation_angle: ", elevation_angle)
+            print("azimuth_angle\t%f\televation_angle\t%f" % (azimuth_angle, elevation_angle))
+            
+            # get the range of target
+            azimuth_dfft_dbfs = linear_to_dB(azimuth_dfft_dbfs)
+            cur_range = get_max_intensity_row(azimuth_dfft_dbfs.T)
+            cur_range = cur_range[::-1]
+            range_idx = np.argmax(cur_range)
+            ranges = np.linspace(0, max_range_m, cur_range.shape[0])[range_idx]
+
+            # get the coordinates in space of target
+            x = ranges * np.cos(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
+            y = ranges * np.sin(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
+            z = ranges * np.sin(elevation_angle * np.pi / 180)
+
+            
 
 if __name__=="__main__":
     get_trace_in_real_time()
