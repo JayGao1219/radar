@@ -80,3 +80,13 @@ class DBF:
             rd_beam_formed[:,:,iBeam] = acc
 
         return rd_beam_formed
+    
+    def get_angle_of_arrival(self,):
+        """Get angle vector
+
+        Returns:
+            - angle vector in degrees
+        """
+        num_antennas_internal, num_beams = self.weights.shape
+        angle_vector = np.linspace(-45, 45, num_beams)
+        return angle_vector
