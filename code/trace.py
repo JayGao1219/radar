@@ -28,8 +28,8 @@ def get_trace_in_real_time():
         if_gain_dB =               33
     )
 
-    config = device.metrics_to_config(metrics)
     with Avian.Device() as device:
+        config = device.metrics_to_config(metrics)
         # set configuration
         device.set_config(config)
 
@@ -76,12 +76,12 @@ def get_trace_in_real_time():
             azimuth_beam_formed = azimuth_dbf.run(azimuth_rd_spectrum)
             for i_beam in range(trace_config.num_azimuth_beam):
                 doppler_i = azimuth_beam_formed[:,:,i_beam]
-                azimuth_beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(config.num_azimuth_beam)
+                azimuth_beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(trace_config.num_azimuth_beam)
 
             elevation_beam_formed = elevation_dbf.run(elevation_rd_spectrum)
             for i_beam in range(trace_config.num_elevation_beam):
                 doppler_i = elevation_beam_formed[:,:,i_beam]
-                elevation_beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(config.num_elevation_beam)
+                elevation_beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(trace_config.num_elevation_beam)
             
             # maximum energy in range-Angle map
             azimuth_max_energy = np.max(azimuth_beam_range_energy)
@@ -104,3 +104,5 @@ def get_trace_in_real_time():
 
             print("azimuth_angle: ", azimuth_angle, "elevation_angle: ", elevation_angle)
 
+if __name__=="__main__":
+    get_trace_in_real_time()
