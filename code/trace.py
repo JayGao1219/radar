@@ -15,44 +15,6 @@ from doppler import DopplerAlgo,linear_to_dB
 from data_collecting import num_rx_antennas_from_config,get_max_intensity_row
 from radar_config import trace_config
 
-'''
-class RealTimePlotter:
-    def __init__(self, num_plots, plot_names, plot_lens):
-        self.num_plots = num_plots
-        self.plot_names = plot_names
-        self.plot_lens = plot_lens
-        self.color = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'w']
-        # 创建Qt应用程序
-        self.app = pg.mkQApp()           # App Setup
-        # 创建一个窗口
-        self.win = pg.GraphicsLayoutWidget(show=True)
-        self.win.resize(1000,600)
-        self.win.setWindowTitle('Real-time angle plot')
-
-        self.p = []
-        self.data=[]
-        self.curve=[]
-
-        for i in range(num_plots):
-            # 创建绘制区域
-            self.p.append(self.win.addPlot(title=plot_names[i]))
-
-            # 创建数据缓冲区
-            self.data.append(np.zeros(plot_lens[i]))
-
-            # 创建曲线
-            self.curve.append(self.p[i].plot(self.data[i], pen=self.color[i]))
-    
-    def update(self, data):
-        for i in range(self.num_plots):
-            self.data[i] = np.roll(self.data[i], -1)
-            self.data[i][-1] = data[i]
-            self.curve[i].setData(self.data[i])
-
-'''
-
-
-
 def get_trace_in_real_time():
     metrics = Avian.DeviceMetrics(
         sample_rate_Hz =           1_000_000,
