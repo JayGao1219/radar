@@ -65,7 +65,7 @@ def get_trace_in_real_time():
     azimuth_doppler = DopplerAlgo(config, num_rx_antennas, 0.9) #RX1, RX3
     azimuth_antennas = [0,2]
     elevation_doppler = DopplerAlgo(config, num_rx_antennas, 0.9) #RX2, RX3
-    elevation_antennas = [0,1]
+    elevation_antennas = [1,2]
     azimuth_dbf = DBF(num_rx_antennas, num_beams = trace_config.num_azimuth_beam, max_angle_degrees = trace_config.max_Azimuth_degress)
     elevation_dbf = DBF(num_rx_antennas, num_beams = trace_config.num_elevation_beam, max_angle_degrees = trace_config.max_Elevation_degress)
     # Continuously calculate the angle of arrival and plot the results
