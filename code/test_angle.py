@@ -16,7 +16,7 @@ from doppler import DopplerAlgo,linear_to_dB
 from data_collecting import num_rx_antennas_from_config,get_max_intensity_row
 from radar_config import trace_config
 
-def get_trace_in_real_time():
+def test_angel():
     metrics = Avian.DeviceMetrics(
         sample_rate_Hz =           1_000_000,
         range_resolution_m =       0.1,
@@ -144,5 +144,98 @@ def get_trace_in_real_time():
     # 运行应用程序
     app.exec_()
 
+def source_code():
+    num_beams = 27         # number of beams
+    max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
+
+    metrics = Avian.DeviceMetrics(
+        sample_rate_Hz =           1_000_000,
+        range_resolution_m =       0.1,
+        max_range_m =              1.5,
+        max_speed_m_s =            1.9,
+        speed_resolution_m_s =     0.2,
+        frame_repetition_time_s =  0.15,
+        center_frequency_Hz =      60_500_000_000,
+        rx_mask =                  5, # activate RX1 and RX3
+        tx_mask =                  1,
+        tx_power_level =           31,
+        if_gain_dB =               33
+    )
+    # 创建Qt应用程序
+    app = pg.mkQApp()           # App Setup
+    # 创建一个窗口
+    win = pg.GraphicsLayoutWidget(show=True)
+    win.resize(1000,600)
+    win.setWindowTitle('Real-time data plot')
+
+    # 创建1个绘图区域
+    p1 = win.addPlot(title="azimuth")
+
+    # 创建1个数据缓冲区
+    data1 = np.zeros(30)
+
+    # 创建两个曲线对象
+    curve1 = p1.plot(data1, pen='r') # azimuth
+
+    device = Avian.Device()
+    config = device.metrics_to_config(metrics)
+    device.set_config(config)
+
+    print("config")
+    pprint(config)
+    # get maximum range
+    max_range_m = metrics.max_range_m
+
+    # Create frame handle
+    num_rx_antennas = 2
+
+    # Create objects for Range-Doppler, DBF, and plotting.
+    doppler = DopplerAlgo(config, num_rx_antennas, 0.9)
+    dbf = DBF(num_rx_antennas, num_beams = num_beams, max_angle_degrees = max_angle_degrees)
+
+    def update():
+        nonlocal data1
+        frame = device.get_next_frame()
+
+        rd_spectrum = np.zeros((config.num_samples_per_chirp, 2*config.num_chirps_per_frame, num_rx_antennas), dtype=complex)
+
+        beam_range_energy = np.zeros((config.num_samples_per_chirp, num_beams))
+
+        for i_ant in range(num_rx_antennas): # For each antenna
+            # Current RX antenna (num_samples_per_chirp x num_chirps_per_frame)
+            mat = frame[i_ant, :, :]
+
+            # Compute Doppler spectrum
+            dfft_dbfs = doppler.compute_doppler_map(mat, i_ant)
+            rd_spectrum[:,:,i_ant] = dfft_dbfs
+
+        # Compute Range-Angle map
+        rd_beam_formed = dbf.run(rd_spectrum)
+        for i_beam in range(num_beams):
+            doppler_i = rd_beam_formed[:,:,i_beam]
+            beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
+
+        # Maximum energy in Range-Angle map
+        max_energy = np.max(beam_range_energy)
+
+        scale = 150
+        beam_range_energy = scale*(beam_range_energy/max_energy - 1)
+        # Find dominant angle of target
+        _, idx = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
+        angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[idx]
+
+        data1[:-1]=data1[1:]
+        data1[-1]=angle_degrees
+        curve1.setData(data1)
+        p1.enableAutoRange('y', True)
+    
+    # 定义定时器
+    timer = QtCore.QTimer()
+    timer.timeout.connect(update)
+    timer.start(50) # 50ms刷新一次
+    
+    # 运行应用程序
+    app.exec_()
+
 if __name__=="__main__":
-    get_trace_in_real_time()
+    test_angel()
