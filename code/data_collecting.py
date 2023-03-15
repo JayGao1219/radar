@@ -100,7 +100,6 @@ class RealTimePlotter:
         return self._is_window_open
 
 def data_collect_in_real_time(root,gesture,number):
-    # filepath是一个路径，以/结尾
     filepath='%s%s/'%(root,gesture)
     if not os.path.exists(filepath):
         os.makedirs(filepath)
