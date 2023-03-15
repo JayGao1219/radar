@@ -51,6 +51,10 @@ def get_trace_in_real_time():
 
     device = Avian.Device()
     config = device.metrics_to_config(metrics)
+
+    print("config")
+    pprint(config)
+
     # set configuration
     device.set_config(config)
     # get maximum range
