@@ -144,7 +144,7 @@ def test_angel():
     # 运行应用程序
     app.exec_()
 
-def source_code():
+def test_azimuth():
     num_beams = 27         # number of beams
     max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
 
@@ -238,4 +238,4 @@ def source_code():
     app.exec_()
 
 if __name__=="__main__":
-    test_angel()
+    test_azimuth()
