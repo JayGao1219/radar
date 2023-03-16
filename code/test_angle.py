@@ -332,6 +332,20 @@ def store_angle_data(root_path, angle_data, tot_time):
         f.write(str(result))
 
 
+# 卡尔曼滤波
+def kalman_filter(data, Q, R):
+    x = np.zeros(len(data))
+    p = np.zeros(len(data))
+    x[0] = 0.0
+    p[0] = 1.0
+    for k in range(1, len(data)):
+        x[k] = x[k-1]
+        p[k] = p[k-1] + Q
+        K = p[k] / (p[k] + R)
+        x[k] = x[k] + K * (data[k] - x[k])
+        p[k] = (1 - K) * p[k]
+    return x
+
 if __name__=="__main__":
     angle=input("请输入想要测试的角度:")
     angle=int(angle)
