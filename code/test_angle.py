@@ -236,5 +236,106 @@ def test_azimuth():
     # 运行应用程序
     app.exec_()
 
+
+def store_angle_data(root_path, angle_data, tot_time):
+    filepath='%s%d/'%(root_path, angle_data)
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+        index=0
+    else:
+        index=len(os.listdir(filepath))
+
+    result=[]
+
+
+    num_beams = 27         # number of beams
+    max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
+
+    metrics = Avian.DeviceMetrics(
+        sample_rate_Hz =           1_000_000,
+        range_resolution_m =       0.05,
+        max_range_m =              1,
+        max_speed_m_s =            0.9,
+        speed_resolution_m_s =     0.2,
+        frame_repetition_time_s =  0.15,
+        center_frequency_Hz =      60_750_000_000,
+        rx_mask =                  6, # activate RX1 and RX3
+        tx_mask =                  1,
+        tx_power_level =           31,
+        if_gain_dB =               33
+    )
+
+
+    with Avian.Device() as device:
+        config = device.metrics_to_config(metrics)
+        # set configuration
+        device.set_config(config)
+
+        # get metrics and print them
+        metrics = device.metrics_from_config(config)
+        pprint.pprint(metrics)
+
+        # get maximum range
+        max_range_m = metrics.max_range_m
+
+        # Create frame handle
+        num_rx_antennas = num_rx_antennas_from_config(config)
+
+        # Create objects for Range-Doppler, DBF, and plotting.
+        doppler = DopplerAlgo(config, num_rx_antennas, 0.9)
+        dbf = DBF(num_rx_antennas, num_beams = num_beams, max_angle_degrees = max_angle_degrees)
+        plot = LivePlot(max_angle_degrees, max_range_m)
+
+        # 计时器
+        start_time=time.time()
+        while True:
+            now = time.time()
+            if now-start_time>tot_time:
+                break
+            # frame has dimension num_rx_antennas x num_samples_per_chirp x num_chirps_per_frame
+            frame = device.get_next_frame()
+
+            rd_spectrum = np.zeros((config.num_samples_per_chirp, 2*config.num_chirps_per_frame, num_rx_antennas), dtype=complex)
+
+            beam_range_energy = np.zeros((config.num_samples_per_chirp, num_beams))
+
+            for i_ant in range(num_rx_antennas): # For each antenna
+                # Current RX antenna (num_samples_per_chirp x num_chirps_per_frame)
+                mat = frame[i_ant, :, :]
+
+                # Compute Doppler spectrum
+                dfft_dbfs = doppler.compute_doppler_map(mat, i_ant)
+                rd_spectrum[:,:,i_ant] = dfft_dbfs
+
+            # Compute Range-Angle map
+            rd_beam_formed = dbf.run(rd_spectrum)
+            for i_beam in range(num_beams):
+                doppler_i = rd_beam_formed[:,:,i_beam]
+                beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
+
+            # Maximum energy in Range-Angle map
+            max_energy = np.max(beam_range_energy)
+
+            # Rescale map to better capture the peak The rescaling is done in a
+            # way such that the maximum always has the same value, independent
+            # on the original input peak. A proper peak search can greatly
+            # improve this algorithm.
+            scale = 150
+            beam_range_energy = scale*(beam_range_energy/max_energy - 1)
+
+            # Find dominant angle of target
+            _, idx = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
+            angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[idx]
+            result.append(angle_degrees)
+
+    with open("%s%d.txt"%(filepath, index), "w") as f:
+        f.write(str(result))
+
+
 if __name__=="__main__":
-    test_azimuth()
+    angle=input("请输入想要测试的角度:")
+    angle=int(angle)
+    tot=input("请输入测试时长")
+    tot=int(tot)
+    root='../data/'
+    store_angle_data(root, angle, tot)
