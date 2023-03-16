@@ -151,8 +151,8 @@ def test_azimuth():
     metrics = Avian.DeviceMetrics(
         sample_rate_Hz =           1_000_000,
         range_resolution_m =       0.1,
-        max_range_m =              1.5,
-        max_speed_m_s =            1.9,
+        max_range_m =              1,
+        max_speed_m_s =            0.9,
         speed_resolution_m_s =     0.2,
         frame_repetition_time_s =  0.15,
         center_frequency_Hz =      60_500_000_000,
@@ -182,7 +182,6 @@ def test_azimuth():
     device.set_config(config)
 
     print("config")
-    pprint(config)
     # get maximum range
     max_range_m = metrics.max_range_m
 

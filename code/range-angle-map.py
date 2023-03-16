@@ -120,6 +120,20 @@ if __name__ == '__main__':
     num_beams = 27         # number of beams
     max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
 
+    metrics = Avian.DeviceMetrics(
+        sample_rate_Hz =           1_000_000,
+        range_resolution_m =       0.05,
+        max_range_m =              1,
+        max_speed_m_s =            0.9,
+        speed_resolution_m_s =     0.2,
+        frame_repetition_time_s =  0.15,
+        center_frequency_Hz =      60_750_000_000,
+        rx_mask =                  6, # activate RX1 and RX3
+        tx_mask =                  1,
+        tx_power_level =           31,
+        if_gain_dB =               33
+    )
+    '''
     config = Avian.DeviceConfig(
         sample_rate_Hz = 1_000_000,       # 1MHZ
         rx_mask = 5,                      # activate RX1 and RX3
@@ -134,8 +148,9 @@ if __name__ == '__main__':
         frame_repetition_time_s = 0.15,   # 0.15s, frame_Rate = 6.667Hz
         mimo_mode = 'off'                 # MIMO disabled
     )
-
+    '''
     with Avian.Device() as device:
+        config = device.metrics_to_config(metrics)
         # set configuration
         device.set_config(config)
 

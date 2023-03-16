@@ -33,6 +33,7 @@ from ifxAvian import Avian
 from scipy import signal
 from scipy import constants
 import matplotlib.pyplot as plt
+import pprint
 
 from internal.fft_spectrum import *
 # -------------------------------------------------
@@ -208,7 +209,7 @@ if __name__ == '__main__':
         metric = Avian.DeviceMetrics(
             sample_rate_Hz =           1000000,
             range_resolution_m =       0.05,
-            max_range_m =              1.6,
+            max_range_m =              0.9,
             max_speed_m_s =            3,
             speed_resolution_m_s =     0.2,
             frame_repetition_time_s =  1/args.frate,
@@ -220,6 +221,7 @@ if __name__ == '__main__':
 
         config = device.metrics_to_config(metric);
         device.set_config(config)
+        pprint.pprint(metric)
 
         distance = DistanceFFT_Algo(config)
         draw = Draw(config, metric.max_range_m, num_rx_antennas)
