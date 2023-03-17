@@ -254,12 +254,12 @@ def store_angle_data(root_path, angle_data, tot_time):
     metrics = Avian.DeviceMetrics(
         sample_rate_Hz =           1_000_000,
         range_resolution_m =       0.05,
-        max_range_m =              1,
-        max_speed_m_s =            0.9,
+        max_range_m =              0.59,
+        max_speed_m_s =            3,
         speed_resolution_m_s =     0.2,
         frame_repetition_time_s =  0.15,
         center_frequency_Hz =      60_750_000_000,
-        rx_mask =                  6, # activate RX1 and RX3
+        rx_mask =                  5, # activate RX1 and RX3
         tx_mask =                  1,
         tx_power_level =           31,
         if_gain_dB =               33
@@ -274,6 +274,7 @@ def store_angle_data(root_path, angle_data, tot_time):
         # get metrics and print them
         metrics = device.metrics_from_config(config)
         pprint.pprint(metrics)
+        print("**************")
 
         # get maximum range
         max_range_m = metrics.max_range_m
@@ -284,7 +285,6 @@ def store_angle_data(root_path, angle_data, tot_time):
         # Create objects for Range-Doppler, DBF, and plotting.
         doppler = DopplerAlgo(config, num_rx_antennas, 0.9)
         dbf = DBF(num_rx_antennas, num_beams = num_beams, max_angle_degrees = max_angle_degrees)
-        plot = LivePlot(max_angle_degrees, max_range_m)
 
         # 计时器
         start_time=time.time()
