@@ -277,7 +277,7 @@ def store_angle_data(root_path, angle_data, tot_time, distance):
         end_frequency_Hz = 63e9,        # 63.9GHz
         num_chirps_per_frame = 32,       # 32 chirps per frame
         num_samples_per_chirp = 64,       # 64 samples per chirp
-        chirp_repetition_time_s = 0.000032, # 32μs
+        chirp_repetition_time_s = 0.0005, # 0.5ms
         frame_repetition_time_s = 0.075476,   # 75.476ms, frame_Rate = 13.24Hz
     )
 
@@ -343,6 +343,7 @@ def store_angle_data(root_path, angle_data, tot_time, distance):
             result.append(angle_degrees)
 
     with open("%s%d.txt"%(filepath, index), "w") as f:
+        f.write("%s\n%s\n"%(str(config),str(metrics)))
         f.write("%d\t%d\t%d\n"%(angle_data, tot_time, distance))
         f.write(str(result))
 
