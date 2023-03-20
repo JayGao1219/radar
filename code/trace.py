@@ -16,6 +16,7 @@ from data_collecting import num_rx_antennas_from_config,get_max_intensity_row
 from radar_config import trace_config
 
 def get_trace_in_real_time():
+    '''
     metrics = Avian.DeviceMetrics(
         sample_rate_Hz =           1_000_000,
         range_resolution_m =       0.1,
@@ -28,6 +29,21 @@ def get_trace_in_real_time():
         tx_mask =                  1,
         tx_power_level =           31,
         if_gain_dB =               33
+    )
+    '''
+    # set config as the Radar SNN
+    config = Avian.DeviceConfig(
+        sample_rate_Hz = 1_000_000,       # 1MHZ
+        rx_mask = 5,                      # activate RX1 and RX3
+        tx_mask = 1,                      # activate TX1
+        if_gain_dB = 33,                  # gain of 33dB
+        tx_power_level = 31,              # TX power level of 31
+        start_frequency_Hz = 58e9,        # 58.9GHz 
+        end_frequency_Hz = 63e9,        # 63.9GHz
+        num_chirps_per_frame = 32,       # 32 chirps per frame
+        num_samples_per_chirp = 64,       # 64 samples per chirp
+        chirp_repetition_time_s = 0.000032, # 32μs
+        frame_repetition_time_s = 0.075476,   # 75.476ms, frame_Rate = 13.24Hz
     )
 
     # 创建Qt应用程序
@@ -50,10 +66,11 @@ def get_trace_in_real_time():
     curve2 = p2.plot(data2, pen='b') # elevation
 
     device = Avian.Device()
-    config = device.metrics_to_config(metrics)
+    # config = device.metrics_to_config(metrics)
 
-    print("config")
-    pprint(config)
+    # get metrics and print them
+    metrics = device.metrics_from_config(config)
+    pprint.pprint(metrics)
 
     # set configuration
     device.set_config(config)
@@ -138,7 +155,7 @@ def get_trace_in_real_time():
     # 定义定时器
     timer = QtCore.QTimer()
     timer.timeout.connect(update)
-    timer.start(50) # 50ms刷新一次
+    timer.start(5) # 50ms刷新一次
     
     # 运行应用程序
     app.exec_()

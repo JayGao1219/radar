@@ -237,7 +237,7 @@ def test_azimuth():
     app.exec_()
 
 
-def store_angle_data(root_path, angle_data, tot_time):
+def store_angle_data(root_path, angle_data, tot_time, distance):
     filepath='%s%d/'%(root_path, angle_data)
     if not os.path.exists(filepath):
         os.makedirs(filepath)
@@ -250,7 +250,7 @@ def store_angle_data(root_path, angle_data, tot_time):
 
     num_beams = 27         # number of beams
     max_angle_degrees = 40 # maximum angle, angle ranges from -40 to +40 degrees
-
+    '''
     metrics = Avian.DeviceMetrics(
         sample_rate_Hz =           1_000_000,
         range_resolution_m =       0.05,
@@ -264,10 +264,24 @@ def store_angle_data(root_path, angle_data, tot_time):
         tx_power_level =           31,
         if_gain_dB =               33
     )
+    '''
 
+    # set config as the Radar SNN
+    config = Avian.DeviceConfig(
+        sample_rate_Hz = 1_000_000,       # 1MHZ
+        rx_mask = 5,                      # activate RX1 and RX3
+        tx_mask = 1,                      # activate TX1
+        if_gain_dB = 33,                  # gain of 33dB
+        tx_power_level = 31,              # TX power level of 31
+        start_frequency_Hz = 58e9,        # 58.9GHz 
+        end_frequency_Hz = 63e9,        # 63.9GHz
+        num_chirps_per_frame = 32,       # 32 chirps per frame
+        num_samples_per_chirp = 64,       # 64 samples per chirp
+        chirp_repetition_time_s = 0.000032, # 32μs
+        frame_repetition_time_s = 0.075476,   # 75.476ms, frame_Rate = 13.24Hz
+    )
 
     with Avian.Device() as device:
-        config = device.metrics_to_config(metrics)
         # set configuration
         device.set_config(config)
 
@@ -329,27 +343,15 @@ def store_angle_data(root_path, angle_data, tot_time):
             result.append(angle_degrees)
 
     with open("%s%d.txt"%(filepath, index), "w") as f:
+        f.write("%d\t%d\t%d\n"%(angle_data, tot_time, distance))
         f.write(str(result))
-
-
-# 卡尔曼滤波
-def kalman_filter(data, Q, R):
-    x = np.zeros(len(data))
-    p = np.zeros(len(data))
-    x[0] = 0.0
-    p[0] = 1.0
-    for k in range(1, len(data)):
-        x[k] = x[k-1]
-        p[k] = p[k-1] + Q
-        K = p[k] / (p[k] + R)
-        x[k] = x[k] + K * (data[k] - x[k])
-        p[k] = (1 - K) * p[k]
-    return x
 
 if __name__=="__main__":
     angle=input("请输入想要测试的角度:")
     angle=int(angle)
     tot=input("请输入测试时长")
     tot=int(tot)
+    distance=input("请输入距离")
+    distance=int(distance)
     root='../data/'
-    store_angle_data(root, angle, tot)
+    store_angle_data(root, angle, tot, distance)
