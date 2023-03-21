@@ -29,6 +29,33 @@ def connect_data(info):
 
     return xwhat, ground_truth
 
+# 定义误差计算函数
+def calculate_error(predicted, actual, method):
+    if method == 'mae':
+        error = np.mean(np.abs(predicted - actual))
+    elif method == 'mse':
+        error = np.mean((predicted - actual)**2)
+    elif method == 'rmse':
+        error = np.sqrt(np.mean((predicted - actual)**2))
+    elif method == 'mape':
+        error = np.mean(np.abs((actual - predicted) / actual))
+    else:
+        raise ValueError('无效的误差计算方法')
+    return error
+
+
+def get_error(predicted,actual):
+    # 计算误差
+    mae_error = calculate_error(predicted, actual, 'mae')
+    mse_error = calculate_error(predicted, actual, 'mse')
+    rmse_error = calculate_error(predicted, actual, 'rmse')
+
+    # 打印误差结果
+    print(f'MAE误差：{mae_error:.3f}')
+    print(f'MSE误差：{mse_error:.3f}')
+    print(f'RMSE误差：{rmse_error:.3f}')
+
+
 def correct():
     info={
         -10:[0,1,2,3],
@@ -42,6 +69,10 @@ def correct():
     xwhat, ground_truth = connect_data(info)
     a, b = fit_linear(np.array(xwhat), np.array(ground_truth))
     print(f"a = {a:.2f}, b = {b:.2f}")
+    print('before correction:')
+    get_error(np.array(xwhat), np.array(ground_truth))
+    print('after correction:')
+    get_error(a*np.array(xwhat)+b, np.array(ground_truth))
 
     plt.figure()
     plt.plot(xwhat, 'k+', label='raw')
@@ -50,7 +81,7 @@ def correct():
     plt.legend()
     plt.xlabel('index')  
     plt.ylabel('angle')
-    plt.savefig('correction.png')
+    plt.savefig('../analysis/correction.png')
 
 if __name__ == '__main__':
     correct()
