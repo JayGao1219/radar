@@ -12,11 +12,16 @@ def list2df(list):
 def get_data(angle,index):
     file_path='../data/%d/%d.txt'%(angle,index)
     with open(file_path,'r') as f:
-        data = f.read()
+        data = f.read().split('\n')
+        for item in data:
+            if '[' in item:
+                data = item
+                break
         data = eval(data)
+
     res=[]
     for i in data:
-        if i>39 or i<-39:
+        if i>35 or i<-35:
             continue
         res.append(i)
     return res
@@ -27,7 +32,7 @@ def data_analysis(angle,index):
     profile = ProfileReport(df, title="Pandas Profiling Report")
     profile.to_file(output_file="../analysis/%d_%d.html"%(angle,index))
 
-def kalman_filter(data,ground_truth, file_path):
+def kalman_filter(data,ground_truth, file_path, plot=False):
     n_iter = len(data)
     sz = (n_iter,) # size of array
     x = ground_truth # truth value (typo in example at top of p. 13 calls this z)
@@ -48,21 +53,24 @@ def kalman_filter(data,ground_truth, file_path):
         xhat[k] = kf.x
         kf.update(z[k], 0.1**2, np.array([1]))
 
-    plt.figure()  
-    plt.plot(z,'k+',label='noisy measurements')     #观测值  
-    plt.plot(xhat,'b-',label='a posteri estimate')  #滤波估计值  
-    plt.axhline(x,color='g',label='truth value')    #真实值  
-    plt.legend()
-    plt.xlabel('index')  
-    plt.ylabel('angle')
-    plt.savefig(file_path)
+    if plot:
+        plt.figure()  
+        plt.plot(z,'k+',label='noisy measurements')     #观测值  
+        plt.plot(xhat,'b-',label='a posteri estimate')  #滤波估计值  
+        plt.axhline(x,color='g',label='truth value')    #真实值  
+        plt.legend()
+        plt.xlabel('index')  
+        plt.ylabel('angle')
+        plt.savefig(file_path)
+    else:
+        return xhat.tolist()
 
 def kalman_filter_test(angle,index):
     data = get_data(angle,index)
-    kalman_filter(data,angle, '../analysis/%d_%d.png'%(angle,index))
+    kalman_filter(data,angle, '../analysis/%d_%d.png'%(angle,index), plot=True)
 
 if __name__ == '__main__':
-    for i in [0,10,20,30]:
-        for j in range(2):
+    for i in [-30,-20,-10,0,10,20,30]:
+        for j in range(4):
             kalman_filter_test(i,j)
             # data_analysis(i,j)
