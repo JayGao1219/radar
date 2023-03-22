@@ -269,7 +269,7 @@ def store_angle_data(root_path, angle_data, tot_time, distance):
     # set config as the Radar SNN
     config = Avian.DeviceConfig(
         sample_rate_Hz = 1_000_000,       # 1MHZ
-        rx_mask = 5,                      # activate RX1 and RX3
+        rx_mask = 6,                      # activate RX2 and RX3
         tx_mask = 1,                      # activate TX1
         if_gain_dB = 33,                  # gain of 33dB
         tx_power_level = 31,              # TX power level of 31
@@ -350,9 +350,9 @@ def store_angle_data(root_path, angle_data, tot_time, distance):
 if __name__=="__main__":
     angle=input("请输入想要测试的角度:")
     angle=int(angle)
-    tot=input("请输入测试时长")
-    tot=int(tot)
+    # tot=input("请输入测试时长")
+    # tot=int(tot)
     distance=input("请输入距离")
     distance=int(distance)
     root='../data/'
-    store_angle_data(root, angle, tot, distance)
+    store_angle_data(root, angle, 20, distance)
