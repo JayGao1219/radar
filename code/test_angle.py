@@ -350,8 +350,9 @@ def store_angle_data(root_path, angle_data, tot_time, distance):
 if __name__=="__main__":
     angle=input("请输入想要测试的角度:")
     angle=int(angle)
-    tot=input("请输入测试时长")
-    tot=int(tot)
+    # tot=input("请输入测试时长")
+    # tot=int(tot)
+    tot=20
     distance=input("请输入距离")
     distance=int(distance)
     root='../data/'
