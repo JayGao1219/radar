@@ -57,6 +57,19 @@ def get_error(predicted,actual):
 
 
 def correct():
+    #elevation
+    info={
+        -30:[4,5,6,7],
+        -20:[4,5,6,7],
+        -10:[4,5,6,7],
+        0:[4,5,6,7],
+        10:[4,5,6,7],
+        20:[4,5,6,7],
+        30:[4,5,6,7]
+    }
+
+    #azimuth
+    '''
     info={
         -10:[0,1,2,3],
         -20:[0,1],
@@ -66,6 +79,7 @@ def correct():
         20:[0,1],
         30:[0,1]
     }
+    '''
     xwhat, ground_truth = connect_data(info)
     a, b = fit_linear(np.array(xwhat), np.array(ground_truth))
     print(f"a = {a:.2f}, b = {b:.2f}")
@@ -75,7 +89,7 @@ def correct():
     get_error(a*np.array(xwhat)+b, np.array(ground_truth))
 
     plt.figure()
-    plt.plot(xwhat, 'k+', label='raw')
+    plt.plot(xwhat, 'k', label='raw')
     plt.plot(a*np.array(xwhat)+b, 'b-', label='after correction')
     plt.plot(ground_truth, 'g', label='ground truth')
     plt.legend()
@@ -85,4 +99,39 @@ def correct():
 
 if __name__ == '__main__':
     correct()
-    # a = 1.17, b = -5.77
+    '''
+    RX2, RX3, elevation
+    a 可正可负，主要和位置有关，实际使用时，a是正的
+    a = -0.81, b = 19.43
+    before correction:
+    MAE误差：19.995
+    MSE误差：639.618
+    RMSE误差：25.291
+    after correction:
+    MAE误差：3.742
+    MSE误差：67.618
+    RMSE误差：8.223
+
+    a = 0.81, b = 19.43
+    before correction:
+    MAE误差：23.741
+    MSE误差：578.279
+    RMSE误差：24.047
+    after correction:
+    MAE误差：3.742
+    MSE误差：67.618
+    RMSE误差：8.223
+    '''
+
+    '''
+    RX1, RX3, azimuth
+    a = 1.13, b = -5.49
+    before correction:
+    MAE误差：6.252
+    MSE误差：58.859
+    RMSE误差：7.672
+    after correction:
+    MAE误差：3.442
+    MSE误差：29.093
+    RMSE误差：5.394
+    '''

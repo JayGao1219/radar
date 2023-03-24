@@ -21,7 +21,7 @@ def get_data(angle,index):
 
     res=[]
     for i in data:
-        if i>35 or i<-35:
+        if i>39 or i<-39:
             continue
         res.append(i)
     return res
@@ -71,6 +71,6 @@ def kalman_filter_test(angle,index):
 
 if __name__ == '__main__':
     for i in [-30,-20,-10,0,10,20,30]:
-        for j in range(4):
+        for j in range(4,8):
             kalman_filter_test(i,j)
             # data_analysis(i,j)
