@@ -17,25 +17,29 @@ from doppler import DopplerAlgo,linear_to_dB
 from data_collecting import num_rx_antennas_from_config,get_max_intensity_row
 from radar_config import trace_config
 
+class Real_time_KalmanFilter():
+    def __init__(self):
+        self.kf = KalmanFilter(dim_x=1, dim_z=1)
+        self.kf.F = np.array([[1.]])
+        self.kf.H = np.array([[1.]])
+        self.kf.R = np.array([0.1**2])
+        self.kf.P = np.array([1.0])
+        self.kf.Q = 1e-5 
+    
+    def update(self, z):
+        self.kf.predict()
+        self.kf.update(z, 0.1**2, np.array([1]))
+        return self.kf.x
+    
+def get_position_from_spherical_coordinates(azimuth_angle, elevation_angle, ranges):
+    x = ranges * np.cos(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
+    y = ranges * np.sin(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
+    z = ranges * np.sin(elevation_angle * np.pi / 180)
+    return x,y,z
+
 def store_position_data(root_path, tot_time, position, distance):
     result=[]
     index = len(os.listdir(root_path))
-
-    '''
-    metrics = Avian.DeviceMetrics(
-        sample_rate_Hz =           1_000_000,
-        range_resolution_m =       0.05,
-        max_range_m =              0.59,
-        max_speed_m_s =            3,
-        speed_resolution_m_s =     0.2,
-        frame_repetition_time_s =  0.15,
-        center_frequency_Hz =      60_750_000_000,
-        rx_mask =                  5, # activate RX1 and RX3
-        tx_mask =                  1,
-        tx_power_level =           31,
-        if_gain_dB =               33
-    )
-    '''
 
     # set config as the Radar SNN
     config = Avian.DeviceConfig(
@@ -125,10 +129,8 @@ def store_position_data(root_path, tot_time, position, distance):
         range_idx = np.argmax(cur_range)
         ranges = np.linspace(0, max_range_m, cur_range.shape[0])[range_idx]
         # get the coordinates in space of target
-        x = ranges * np.cos(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
-        y = ranges * np.sin(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
-        z = ranges * np.sin(elevation_angle * np.pi / 180)
-        result.append([x,y,z,azimuth_angle,elevation_angle,ranges])
+        position = get_position_from_spherical_coordinates(azimuth_angle,elevation_angle,ranges)
+        result.append([position[0],position[1],position[2],azimuth_angle,elevation_angle,ranges])
 
     with open("%s%d.txt"%(root_path, index), "w") as f:
         f.write("%s\n%s\n"%(str(config),str(metrics)))
