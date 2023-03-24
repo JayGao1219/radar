@@ -134,3 +134,15 @@ def store_position_data(root_path, tot_time, position, distance):
         f.write("%s\n%s\n"%(str(config),str(metrics)))
         f.write("position:(%d,%d)\tdistance:%d\ttime:%d\n"%( position[0], position[1], distance, tot_time ))
         f.write(str(result))
+
+if __name__=='__main__':
+    x=input("请输入横坐标x")
+    x=int(x)
+    y=input("请输入纵坐标y")
+    y=int(y)
+    distance=input("请输入距离")
+    distance=int(distance)
+    root='../data/position'
+    # tot=input("请输入测试时长")
+    # tot=int(tot)
+    store_position_data(root,20,(x,y),distance)
