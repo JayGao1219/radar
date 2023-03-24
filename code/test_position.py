@@ -117,7 +117,6 @@ def store_position_data(root_path, tot_time, position, distance):
         _, elevation_idx = np.unravel_index(elevation_beam_range_energy.argmax(), elevation_beam_range_energy.shape)
         azimuth_angle = np.linspace(-trace_config.max_Azimuth_degress, trace_config.max_Azimuth_degress, trace_config.num_azimuth_beam)[azimuth_idx]
         elevation_angle = np.linspace(-trace_config.max_Elevation_degress, trace_config.max_Elevation_degress, trace_config.num_elevation_beam)[elevation_idx]
-        print("azimuth_angle\t%f\televation_angle\t%f" % (azimuth_angle, elevation_angle))            
         # get the range of target
         azimuth_dfft_dbfs = linear_to_dB(azimuth_dfft_dbfs)
         cur_range = get_max_intensity_row(azimuth_dfft_dbfs.T)
@@ -142,7 +141,7 @@ if __name__=='__main__':
     y=int(y)
     distance=input("请输入距离")
     distance=int(distance)
-    root='../data/position'
+    root='../data/position/'
     # tot=input("请输入测试时长")
     # tot=int(tot)
     store_position_data(root,20,(x,y),distance)
