@@ -8,6 +8,7 @@ import time
 import pprint
 from scipy import constants
 import os
+from filterpy.kalman import KalmanFilter
 
 from ifxAvian import Avian
 from internal.fft_spectrum import *
@@ -127,7 +128,7 @@ def store_position_data(root_path, tot_time, position, distance):
         x = ranges * np.cos(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
         y = ranges * np.sin(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
         z = ranges * np.sin(elevation_angle * np.pi / 180)
-        result.append([x,y,z])
+        result.append([x,y,z,azimuth_angle,elevation_angle,ranges])
 
     with open("%s%d.txt"%(root_path, index), "w") as f:
         f.write("%s\n%s\n"%(str(config),str(metrics)))

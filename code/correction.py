@@ -101,7 +101,7 @@ if __name__ == '__main__':
     correct()
     '''
     RX2, RX3, elevation
-    a 可正可负，主要和位置有关，实际使用时，a是正的
+    a 可正可负，主要和位置有关，实际使用时，a是正的，就是摄像头朝上的时候
     a = -0.81, b = 19.43
     before correction:
     MAE误差：19.995
