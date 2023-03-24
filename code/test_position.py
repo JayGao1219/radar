@@ -15,7 +15,12 @@ from internal.fft_spectrum import *
 from DBF import DBF
 from doppler import DopplerAlgo,linear_to_dB
 from data_collecting import num_rx_antennas_from_config,get_max_intensity_row
-from radar_config import trace_config
+from radar_config import trace_config, angle_correct_config
+
+def correct_angle(azimuth_angle, elevation_angle):
+    azimuth_angle = azimuth_angle * angle_correct_config.azimuth_a + angle_correct_config.azimuth_b
+    elevation_angle = elevation_angle * angle_correct_config.elevation_a + angle_correct_config.elevation_b
+    return azimuth_angle, elevation_angle
 
 class Real_time_KalmanFilter():
     def __init__(self):
@@ -36,6 +41,11 @@ def get_position_from_spherical_coordinates(azimuth_angle, elevation_angle, rang
     y = ranges * np.sin(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
     z = ranges * np.sin(elevation_angle * np.pi / 180)
     return x,y,z
+
+def update_angle(angle, pre_angle, maxn, threshold):
+    if angle>maxn-threshold or angle<-maxn+threshold:
+        return pre_angle
+    return angle
 
 def store_position_data(root_path, tot_time, position, distance):
     result=[]
@@ -79,6 +89,9 @@ def store_position_data(root_path, tot_time, position, distance):
     print("开始收集数据")
     # 计时器
     start_time=time.time()
+    pre_azimuth=0.0
+    pre_elevation=0.0
+
     while True:
         now = time.time()
         if now-start_time>tot_time:
@@ -117,20 +130,34 @@ def store_position_data(root_path, tot_time, position, distance):
         # improve this algorithm.
         azimuth_beam_range_energy = trace_config.azimuth_scale *(azimuth_beam_range_energy / azimuth_max_energy -1)
         elevation_beam_range_energy = trace_config.elevation_scale *(elevation_beam_range_energy / elevation_max_energy -1)
+        result.append([])
         # find dominant angle of target
         _, azimuth_idx = np.unravel_index(azimuth_beam_range_energy.argmax(), azimuth_beam_range_energy.shape)
         _, elevation_idx = np.unravel_index(elevation_beam_range_energy.argmax(), elevation_beam_range_energy.shape)
         azimuth_angle = np.linspace(-trace_config.max_Azimuth_degress, trace_config.max_Azimuth_degress, trace_config.num_azimuth_beam)[azimuth_idx]
         elevation_angle = np.linspace(-trace_config.max_Elevation_degress, trace_config.max_Elevation_degress, trace_config.num_elevation_beam)[elevation_idx]
+
+        result[-1].append(azimuth_angle)
+        result[-1].append(elevation_angle)
+
+        azimuth_angle = update_angle(azimuth_angle,pre_azimuth,trace_config.max_Azimuth_degress,trace_config.azimuth_threshold)
+        elevation_angle = update_angle(elevation_angle,pre_elevation,trace_config.max_Elevation_degress,trace_config.elevation_threshold)
+
+        azimuth_angle, elevation_angle = correct_angle(azimuth_angle, elevation_angle)
+        pre_azimuth = azimuth_angle
+        pre_elevation = elevation_angle
+        
         # get the range of target
         azimuth_dfft_dbfs = linear_to_dB(azimuth_dfft_dbfs)
         cur_range = get_max_intensity_row(azimuth_dfft_dbfs.T)
         cur_range = cur_range[::-1]
         range_idx = np.argmax(cur_range)
         ranges = np.linspace(0, max_range_m, cur_range.shape[0])[range_idx]
+        result[-1].append(ranges)
         # get the coordinates in space of target
         position = get_position_from_spherical_coordinates(azimuth_angle,elevation_angle,ranges)
-        result.append([position[0],position[1],position[2],azimuth_angle,elevation_angle,ranges])
+        for item in position:
+            result[-1].append(item)
 
     with open("%s%d.txt"%(root_path, index), "w") as f:
         f.write("%s\n%s\n"%(str(config),str(metrics)))

@@ -10,3 +10,9 @@ class trace_config:
     max_Elevation_degress=40
     num_elevation_beam=27
     elevation_scale = 150
+
+class angle_correct_config:
+    azimuth_a= 1.13
+    azimuth_b= -5.49
+    elevation_a= 0.81
+    elevation_b= 19.43
