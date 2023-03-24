@@ -354,5 +354,5 @@ if __name__=="__main__":
     # tot=int(tot)
     distance=input("请输入距离")
     distance=int(distance)
-    root='../data/'
+    root='../../data/'
     store_angle_data(root, angle, 20, distance)
