@@ -6,10 +6,12 @@ class trace_config:
     max_Azimuth_degress=40
     num_azimuth_beam=27
     azimuth_scale = 150
+    azimuth_threshold = 1
 
     max_Elevation_degress=40
     num_elevation_beam=27
     elevation_scale = 150
+    elevation_threshold = 1
 
 class angle_correct_config:
     azimuth_a= 1.13
