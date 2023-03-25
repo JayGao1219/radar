@@ -91,6 +91,8 @@ def store_position_data(root_path, tot_time, position, distance):
     start_time=time.time()
     pre_azimuth=0.0
     pre_elevation=0.0
+    azimuth_kalman = Real_time_KalmanFilter()
+    elevation_kalman = Real_time_KalmanFilter()
 
     while True:
         now = time.time()
@@ -143,7 +145,11 @@ def store_position_data(root_path, tot_time, position, distance):
         azimuth_angle = update_angle(azimuth_angle,pre_azimuth,trace_config.max_Azimuth_degress,trace_config.azimuth_threshold)
         elevation_angle = update_angle(elevation_angle,pre_elevation,trace_config.max_Elevation_degress,trace_config.elevation_threshold)
 
+
         azimuth_angle, elevation_angle = correct_angle(azimuth_angle, elevation_angle)
+        azimuth_angle = azimuth_kalman.update(azimuth_angle)
+        elevation_angle = elevation_kalman.update(elevation_angle)
+
         pre_azimuth = azimuth_angle
         pre_elevation = elevation_angle
         
