@@ -40,16 +40,18 @@ def get_position_from_spherical_coordinates(azimuth_angle, elevation_angle, rang
     x = ranges * np.cos(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
     y = ranges * np.sin(azimuth_angle * np.pi / 180) * np.cos(elevation_angle * np.pi / 180)
     z = ranges * np.sin(elevation_angle * np.pi / 180)
-    return x,y,z
+    return x[0][0],y[0][0],z[0][0]
 
 def update_angle(angle, pre_angle, maxn, threshold):
     if angle>maxn-threshold or angle<-maxn+threshold:
         return pre_angle
     return angle
 
-def store_position_data(root_path, tot_time, position, distance):
+def store_position_data(root_path, tot_time, coordinate, distance):
     result=[]
     index = len(os.listdir(root_path))
+    filepath = "%s%d/"%(root_path,index)
+    os.makedirs(filepath)
 
     # set config as the Radar SNN
     config = Avian.DeviceConfig(
@@ -169,12 +171,19 @@ def store_position_data(root_path, tot_time, position, distance):
         for item in position:
             result[-1].append(item)
 
-    with open("%s%d.txt"%(root_path, index), "w") as f:
+    with open("%sconfig.txt"%(filepath), "w") as f:
         f.write("%s\n%s\n"%(str(config),str(metrics)))
-        f.write("position:(%d,%d)\tdistance:%d\ttime:%d\n"%( position[0], position[1], distance, tot_time ))
+        f.write("x\ty\tdistance\truntime\n")
+        f.write("%d\t%d\t%d\t%d\n"%( coordinate[0], coordinate[1], distance, tot_time ))
+
+    with open("%sresult.txt"%(filepath), 'w') as f:
         f.write(str(result))
-        f.write(str(frames))
+    
+    with open("%stimestamps.txt"%(filepath), 'w') as f:
         f.write(str(timestamps))
+
+    np.save("%sradar_raw_data.npy"%(filepath),np.array(frames))
+
 
 if __name__=='__main__':
     x=input("请输入横坐标x")
@@ -186,4 +195,4 @@ if __name__=='__main__':
     root='../data/position/'
     # tot=input("请输入测试时长")
     # tot=int(tot)
-    store_position_data(root,20,(x,y),distance)
+    store_position_data(root,5,(x,y),distance)
