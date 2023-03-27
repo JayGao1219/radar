@@ -93,6 +93,7 @@ def store_position_data(root_path, tot_time, position, distance):
     pre_elevation=0.0
     azimuth_kalman = Real_time_KalmanFilter()
     elevation_kalman = Real_time_KalmanFilter()
+    frames = []
 
     while True:
         now = time.time()
@@ -100,6 +101,7 @@ def store_position_data(root_path, tot_time, position, distance):
             break
 
         frame = device.get_next_frame()
+        frames.append(frame)
         azimuth_rd_spectrum = np.zeros((config.num_samples_per_chirp, 2*config.num_chirps_per_frame, num_rx_antennas), dtype=complex)
         elevation_rd_spectrum = np.zeros((config.num_samples_per_chirp, 2*config.num_chirps_per_frame, num_rx_antennas), dtype=complex)
         azimuth_beam_range_energy = np.zeros((config.num_samples_per_chirp, trace_config.num_azimuth_beam))
@@ -169,6 +171,7 @@ def store_position_data(root_path, tot_time, position, distance):
         f.write("%s\n%s\n"%(str(config),str(metrics)))
         f.write("position:(%d,%d)\tdistance:%d\ttime:%d\n"%( position[0], position[1], distance, tot_time ))
         f.write(str(result))
+        f.write(str(frames))
 
 if __name__=='__main__':
     x=input("请输入横坐标x")
