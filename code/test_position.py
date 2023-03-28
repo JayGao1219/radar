@@ -49,9 +49,6 @@ def update_angle(angle, pre_angle, maxn, threshold):
 
 def store_position_data(root_path, tot_time, coordinate, distance):
     result=[]
-    index = len(os.listdir(root_path))
-    filepath = "%s%d/"%(root_path,index)
-    os.makedirs(filepath)
 
     # set config as the Radar SNN
     config = Avian.DeviceConfig(
@@ -88,6 +85,8 @@ def store_position_data(root_path, tot_time, coordinate, distance):
     azimuth_dbf = DBF(num_rx_antennas, num_beams = trace_config.num_azimuth_beam, max_angle_degrees = trace_config.max_Azimuth_degress)
     elevation_dbf = DBF(num_rx_antennas, num_beams = trace_config.num_elevation_beam, max_angle_degrees = trace_config.max_Elevation_degress)
     # Continuously calculate the angle of arrival and plot the results
+    print("准备，倒计时5秒")
+    time.sleep(5)
     print("开始收集数据")
     # 计时器
     start_time=time.time()
@@ -171,6 +170,10 @@ def store_position_data(root_path, tot_time, coordinate, distance):
         for item in position:
             result[-1].append(item)
 
+    index = len(os.listdir(root_path))
+    filepath = "%s%d/"%(root_path,index+1)
+    os.makedirs(filepath)
+
     with open("%sconfig.txt"%(filepath), "w") as f:
         f.write("%s\n%s\n"%(str(config),str(metrics)))
         f.write("x\ty\tdistance\truntime\n")
@@ -190,9 +193,9 @@ if __name__=='__main__':
     x=int(x)
     y=input("请输入纵坐标y")
     y=int(y)
-    distance=input("请输入距离")
-    distance=int(distance)
+    # distance=input("请输入距离")
+    # distance=int(distance)
     root='../data/position/'
     # tot=input("请输入测试时长")
     # tot=int(tot)
-    store_position_data(root,5,(x,y),distance)
+    store_position_data(root,20,(x,y),40)
