@@ -1,0 +1,29 @@
+DeviceConfig:
+    sample_rate_Hz: 1000000
+    rx_mask: 7
+    tx_mask: 1
+    tx_power_level: 31
+    if_gain_dB: 33
+    start_frequency_Hz: 58000000000
+    end_frequency_Hz: 63000000000
+    num_samples_per_chirp: 64
+    num_chirps_per_frame: 32
+    chirp_repetition_time_s: 0.0005000000237487257
+    frame_repetition_time_s: 0.015599999576807022
+    hp_cutoff_Hz: 80000
+    aaf_cutoff_Hz: 500000
+    mimo_mode: off
+DeviceMetrics:
+    sample_rate_Hz: 1000000
+    rx_mask: 7
+    tx_mask: 1
+    tx_power_level: 31
+    if_gain_dB: 33
+    range_resolution_m: 0.0314372219145298
+    max_range_m: 1.0059911012649536
+    max_speed_m_s: 2.477623462677002
+    speed_resolution_m_s: 0.15485146641731262
+    frame_repetition_time_s: 0.015599999576807022
+    center_frequency_Hz: 60500000768.0
+x	y	distance	runtime
+2	0	50	20

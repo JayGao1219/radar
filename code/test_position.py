@@ -62,7 +62,7 @@ def store_position_data(root_path, tot_time, coordinate, distance):
         num_chirps_per_frame = 32,       # 32 chirps per frame
         num_samples_per_chirp = 64,       # 64 samples per chirp
         chirp_repetition_time_s = 0.0005, # 0.5ms
-        frame_repetition_time_s = 0.075476,   # 75.476ms, frame_Rate = 13.24Hz
+        frame_repetition_time_s = 0.0156,   # 75.476ms, frame_Rate = 13.24Hz
     )
     device = Avian.Device()
     # config = device.metrics_to_config(metrics)
@@ -198,4 +198,4 @@ if __name__=='__main__':
     root='../data/position/'
     # tot=input("请输入测试时长")
     # tot=int(tot)
-    store_position_data(root,20,(x,y),40)
+    store_position_data(root,20,(x,y),50)
