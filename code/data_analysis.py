@@ -5,6 +5,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 np.random.seed(0)
 
+from radar_config import position_cofig
+
 def list2df(list):
     df = pd.DataFrame(list)
     return df
@@ -69,8 +71,64 @@ def kalman_filter_test(angle,index):
     data = get_data(angle,index)
     kalman_filter(data,angle, '../analysis/%d_%d.png'%(angle,index), plot=True)
 
+# data analysis for position
+def get_real_position(x,y):
+    return x*position_cofig.dx, y*position_cofig.dy, position_cofig.distance
+
+def get_position_data(index):
+    file_path='%s%d/'%(position_cofig.root,index)
+
+    info={}
+    names=[]
+    with open(file_path+'config.txt','r') as f:
+        context = f.read().split('\n')
+        flag=False
+        for item in context:
+            if flag:
+                value = item.split('\t')
+                for i in range(len(names)):
+                    info[names[i]]=int(value[i])
+                break
+
+            if 'distance' in item:
+                flag=True
+                names = item.split('\t')
+
+    x,y,z = get_real_position(info['x'],info['y'])
+    info['coordinate']=[x,y,z]
+
+    raw_data=np.load(file_path+'radar_raw_data.npy')
+
+    with open(file_path+"result.txt") as f:
+        result=eval(f.read())
+
+    with open(file_path+"timestamps.txt") as f:
+        timestamps=eval(f.read())
+
+    return info,raw_data,result,timestamps
+
+def change_list_2_dict(names,l):
+    res={}
+    for item in names:
+        res[item]=[]
+    for item in l:
+        for i in range(len(names)):
+            res[names[i]].append(item[i])
+    return res            
+
+def change_list_2_df(names,l):
+    dictionary = change_list_2_dict(names,l)
+    return pd.DataFrame(dictionary)
+
+def analysis_position(index):
+    info,raw_data,result,timestamps = get_position_data(index)
+    names=['azimuth','elevation','range','x','y','z']
+    df = change_list_2_df(names,result)
+    profile = ProfileReport(df, title="Pandas Profiling Report")
+    profile.to_file(output_file="../analysis/position_%d_(%d_%d_%d).html"%(index,info['coordinate'][0],info['coordinate'][1],info['coordinate'][2]))
+
+
+
 if __name__ == '__main__':
-    for i in [-30,-20,-10,0,10,20,30]:
-        for j in range(4,8):
-            kalman_filter_test(i,j)
-            # data_analysis(i,j)
+    for i in range(18):
+        analysis_position(i+1)

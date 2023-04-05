@@ -18,3 +18,9 @@ class angle_correct_config:
     azimuth_b= -5.49
     elevation_a= 0.81
     elevation_b= 19.43
+
+class position_cofig:
+    dx=15
+    dy=15
+    distance=40
+    root="../data/position/"
