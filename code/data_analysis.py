@@ -125,7 +125,7 @@ def analysis_position(index):
     names=['azimuth','elevation','range','x','y','z']
     df = change_list_2_df(names,result)
     profile = ProfileReport(df, title="Pandas Profiling Report")
-    profile.to_file(output_file="../analysis/position_%d_(%d_%d_%d).html"%(index,info['coordinate'][0],info['coordinate'][1],info['coordinate'][2]))
+    profile.to_file(output_file="../analysis/position/position_%d_(%d_%d_%d).html"%(index,info['coordinate'][0],info['coordinate'][1],info['coordinate'][2]))
 
 
 
