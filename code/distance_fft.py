@@ -29,7 +29,7 @@
 import argparse
 import numpy as np
 
-from ifxAvian import Avian
+# from ifxAvian import Avian
 from scipy import signal
 from scipy import constants
 import matplotlib.pyplot as plt
@@ -42,7 +42,7 @@ from internal.fft_spectrum import *
 class DistanceFFT_Algo:
     # Algorithm for computation of distance fft from raw data
 
-    def __init__(self, config : Avian.DeviceConfig):
+    def __init__(self, config):
         # Common values initiation
         # cfg: dictionary with configuration for device used by set_config() as input
 
@@ -76,7 +76,7 @@ class DistanceFFT_Algo:
         max = np.argmax(data[skip:])
 
         dist = self._range_bin_length * (max + skip)
-        return dist, data
+        return dist*100, data
 
 # -------------------------------------------------
 # Presentation

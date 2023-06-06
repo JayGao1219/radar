@@ -31,13 +31,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
 
-from ifxAvian import Avian
+# from ifxAvian import Avian
 from internal.fft_spectrum import *
 
 class DopplerAlgo:
     """Compute Range-Doppler map"""
 
-    def __init__(self, config : Avian.DeviceConfig, num_ant : int, mti_alpha : float = 0.8):
+    def __init__(self, config, num_ant : int, mti_alpha : float = 0.8):
         """Create Range-Doppler map object
 
         Parameters:

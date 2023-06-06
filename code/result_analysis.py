@@ -8,7 +8,13 @@ import ast
 import pandas as pd
 from math import sqrt, degrees, atan2, acos, radians, sin, cos
 from sklearn.metrics import mean_squared_error
+# from pandas_profiling import ProfileReport
 
+from radar_config import angle_correct_config
+from distance_fft import DistanceFFT_Algo
+from DBF import DBF
+from doppler import DopplerAlgo,linear_to_dB
+from data_analysis import kalman_filter
 from radar_config import angle_correct_config
 
 def calculate_distance_azimuth_elevation(point):
@@ -212,8 +218,160 @@ def calculate_error_for_all():
 
     return df
 
-# 执行函数并打印误差表
-df = calculate_error_for_all()
-print(df)
-# 保存误差表
-df.to_csv('../data/position_error.csv', index=False)
+
+class cur_collect_config:
+    num_chirps_per_frame = 32
+    num_samples_per_chirp = 64
+    start_frequency_Hz = 58e9
+    end_frequency_Hz = 63e9
+
+
+def cal_position_for_folder(folder_path,name):
+    # 读取数据并计算真实坐标
+    config_path = os.path.join(folder_path, 'config.txt')
+    x, y, distance = read_config(config_path)
+    true_coord = config_to_coord(x, y, distance)
+    true_distance, true_azimuth, true_elevation = calculate_distance_azimuth_elevation(true_coord)
+    # 读取结果并获取计算的azimuth、elevation和distance
+    result_path = os.path.join(folder_path, '%s_result.csv'%name)
+    data_path = os.path.join(folder_path, 'radar_raw_data.npy')
+
+    # read data
+    data = np.load(data_path)
+    # 计算距离
+    distance = DistanceFFT_Algo(cur_collect_config)
+    result = []
+    result.append(['range_R1', 'range_R2', 'range_R3', 'range_mean','r_ground_truth'])
+
+    for i in range(0, data.shape[0]):
+        result.append([])
+        cur_range = 0.0
+        frame = data[i]
+        for j in range(0, frame.shape[0]):
+            dist_peak_m, _ = distance.compute_distance(frame[j])
+            result[-1].append(dist_peak_m)
+            cur_range += dist_peak_m
+        cur_range /= frame.shape[0]
+        result[-1].append(cur_range)
+        result[-1].append(true_distance)
+
+    # 计算azimuth和elevation
+    # 代表用哪两个天线计算azimuth
+    info = {'azimuth': [0,2], 'elevation': [1,2]}
+    azimuth = []
+    elevation = []
+
+    for key in info:
+        doppler = DopplerAlgo(cur_collect_config, 2, 0.9)
+        num_beams = 27
+        max_angle_degrees = 40
+        dbf = DBF(2,num_beams=num_beams, max_angle_degrees=max_angle_degrees)
+
+        for i in range(0, data.shape[0]):
+            frame = data[i]
+            rd_spectrum = np.zeros((cur_collect_config.num_samples_per_chirp, 2*cur_collect_config.num_chirps_per_frame, 2), dtype=complex)
+            beam_range_energy = np.zeros((cur_collect_config.num_samples_per_chirp, num_beams))
+
+            tot=0
+            for i_ant in info[key]:
+                mat = frame[i_ant, :, :]
+                # Compute Doppler spectrum
+                dfft_dbfs = doppler.compute_doppler_map(mat, tot)
+                rd_spectrum[:,:,tot] = dfft_dbfs
+                tot+=1
+
+            # Compute Range-Angle map
+            rd_beam_formed = dbf.run(rd_spectrum)
+            for i_beam in range(num_beams):
+                doppler_i = rd_beam_formed[:,:,i_beam]
+                beam_range_energy[:,i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
+
+            # Maximum energy in Range-Angle map
+            max_energy = np.max(beam_range_energy)
+
+            # Rescale map to better capture the peak The rescaling is done in a
+            # way such that the maximum always has the same value, independent
+            # on the original input peak. A proper peak search can greatly
+            # improve this algorithm.
+            scale = 150
+            beam_range_energy = scale*(beam_range_energy/max_energy - 1)
+
+            # Find dominant angle of target
+            _, idx = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
+            angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[idx]
+            if key == 'azimuth':
+                azimuth.append(angle_degrees)
+            else:
+                elevation.append(angle_degrees)
+            
+    # 加入卡尔曼滤波
+    azimuth = kalman_filter(azimuth,azimuth,None,False)
+    elevation = kalman_filter(elevation,elevation,None,False)
+    # 修正角度
+    for i in range(len(azimuth)):
+        azimuth[i] = azimuth[i] * angle_correct_config.azimuth_a + angle_correct_config.azimuth_b
+        elevation[i] = elevation[i] * angle_correct_config.elevation_a + angle_correct_config.elevation_b
+
+    # 计算误差
+    error = {}
+    error['x'] = str(x)
+    error['y'] = str(y)
+
+    for i in range(3):
+        cur=[]
+        for item in result:
+            cur.append(item[i])
+        cur=cur[1:]
+        error['range_R%d'%(i+1)]=calculate_rmse(cur, [true_distance] * len(cur))
+    
+    cur=[]
+    for item in result:
+        cur.append(item[3])
+    cur=cur[1:]
+    error['range_mean']=calculate_rmse(cur, [true_distance] * len(cur))
+
+    error['azimuth'] = calculate_rmse(azimuth, [true_azimuth] * len(azimuth))
+    error['elevation'] = calculate_rmse(elevation, [true_elevation] * len(elevation))
+    
+    with open(result_path, 'w') as f:
+        for item in result:
+            f.write(','.join([str(x) for x in item]) + '\n')
+        
+    return error
+
+def cal_position_for_all(name):
+    # 误差分析
+    df = pd.DataFrame(columns=['x','y','range_R1', 'range_R2', 'range_R3', 'range_mean','azimuth','elevation'])
+
+    for i in range(1, 49):
+        folder_path = f'../data/position/{i}'
+        print(folder_path)
+        error = cal_position_for_folder(folder_path, name)
+        df = df.append(error, ignore_index=True)
+    
+    print(df)
+    df.to_csv('../%s_result.csv'%name)
+
+def analysis_result(file_path,index):
+    df = pd.read_csv(file_path)
+    profile = ProfileReport(df, title="range")
+    profile.to_file(output_file="../analysis/range_%d.html"%(index))
+
+def analysis_all():
+    for i in range(1, 49):
+        file_path = f'../data/position/{i}/test_result.csv'
+        print(file_path)
+        analysis_result(file_path,i)
+
+if __name__=='__main__':
+    cal_position_for_all('test')
+    # analysis_all()
+    
+    # cal_position_for_folder('../data/position/19','test')
+    '''
+    # 执行函数并打印误差表
+    df = calculate_error_for_all()
+    print(df)
+    # 保存误差表
+    df.to_csv('../data/position_error.csv', index=False)
+    '''

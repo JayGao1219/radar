@@ -15,7 +15,8 @@ from internal.fft_spectrum import *
 from DBF import DBF
 from doppler import DopplerAlgo,linear_to_dB
 from data_collecting import num_rx_antennas_from_config,get_max_intensity_row
-from radar_config import trace_config, angle_correct_config
+from radar_config import trace_config, angle_correct_configS
+from distance_fft import DistanceFFT_Algo
 
 def correct_angle(azimuth_angle, elevation_angle):
     azimuth_angle = azimuth_angle * angle_correct_config.azimuth_a + angle_correct_config.azimuth_b
@@ -187,8 +188,47 @@ def store_position_data(root_path, tot_time, coordinate, distance):
 
     np.save("%sradar_raw_data.npy"%(filepath),np.array(frames))
 
+class cur_collect_config:
+    num_chirps_per_frame = 32
+    num_samples_per_chirp = 64
+    start_frequency_Hz = 58e9
+    end_frequency_Hz = 63e9
+
+
+def cal_position_for_folder(folder_path,name):
+    result_path = os.path.join(folder_path, '%s_result.txt'%name)
+    data_path = os.path.join(folder_path, 'radar_raw_data.npy')
+
+    # read data
+    data = np.load(data_path)
+    distance = DistanceFFT_Algo(cur_collect_config)
+    result = []
+
+    for i in range(0, data.shape[0]):
+        result.append([])
+        cur_range = 0.0
+        frame = data[i]
+        for j in range(0, frame.shape[0]):
+            cur_range += distance.compute_distance(frame[j])
+        cur_range /= frame.shape[0]
+        result[-1].append(cur_range)
+    
+    with open(result_path, 'w') as f:
+        f.write(str(result))
+
+def cal_position_for_all(name):
+    for i in range(1, 49):
+        folder_path = f'../data/position/{i}'
+        print(folder_path)
+        cal_position_for_folder(folder_path, name)
+
 
 if __name__=='__main__':
+    folder_path = '../data/position/1'
+    cal_position_for_folder(folder_path, range)
+    pass
+    
+    '''
     x=input("请输入横坐标x")
     x=int(x)
     y=input("请输入纵坐标y")
@@ -199,3 +239,4 @@ if __name__=='__main__':
     # tot=input("请输入测试时长")
     # tot=int(tot)
     store_position_data(root,20,(x,y),50)
+    '''
